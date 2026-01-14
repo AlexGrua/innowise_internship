@@ -1,0 +1,4 @@
+psycopg==3.3.2
+psycopg-binary==3.3.2
+python-dotenv==1.2.1
+tzdata==2025.3
