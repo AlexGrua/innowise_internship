@@ -28,26 +28,37 @@ All age calculations are done in PostgreSQL.
 
 ---
 
+SQL Architecture
+
+All analytical SQL queries are stored in a single file:
+sql/queries.sql
+
+Each query is identified by a named marker:
+```bash
+-- name: rooms_with_students_count
+SELECT ...
+```
+
 ## Environment Configuration
 
-Database connection settings are stored in a `.env` file (not committed to git)
+Database connection settings are shown in a `.env.example` file 
 
 ## Usage
 
 Initialize database schema and indexes:
 ```bash
-python -m src.main --rooms rooms.json --students students.json --format json --init-db
+python -m src.main --format json --init-db
 ```
 
 Generate reports in JSON format:
 
 ```bash
-python -m src.main --rooms rooms.json --students students.json --format json
+python -m src.main --format json
 ```
 
 Generate reports in XML format:
 ```bash
-python -m src.main --rooms rooms.json --students students.json --format xml
+python -m src.main --format xml
 ```
 
 ## Output

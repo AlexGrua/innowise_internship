@@ -1,105 +1,72 @@
-import psycopg
-from src.infra.db import get_dsn
+from __future__ import annotations
 
-def rooms_with_students_count():
-    sql = """
-    SELECT r.id, r.name, COUNT(s.id) as students_count
-    FROM rooms2 r
-    LEFT JOIN students2 s 
-    ON s.room_id = r.id
-    GROUP BY r.id, r.name
-    ORDER BY r.id
+from pathlib import Path
+from typing import Any, Sequence
 
-    """
+from src.infra.sql_runner import fetch_all
 
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
-            rows = cur.fetchall()
+DEFAULT_LIMIT = 5
 
-    return [
-        {"id": rid, "name": name, "students_count": cnt}
-        for (rid, name, cnt) in rows
-    ]
+QUERIES_FILE = Path("sql/queries.sql")
 
 
-def rooms_with_smallest_avg_age(limit: int = 5):
-    sql = """
-    SELECT r.id, r.name, 
-            AVG(EXTRACT(YEAR FROM AGE(CURRENT_DATE, s.birthday))) as avg_age
-    FROM rooms2 r
-    JOIN students2 s 
-    ON s.room_id = r.id
-    GROUP BY r.id, r.name
-    ORDER BY avg_age ASC
-    LIMIT %s;
-    """
+def _load_named_queries(sql_file: Path = QUERIES_FILE) -> dict[str, str]:
+    text = sql_file.read_text(encoding="utf-8")
+    queries: dict[str, str] = {}
 
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, (limit,))
-            rows = cur.fetchall()
-    return [
+    current_name: str | None = None
+    buf: list[str] = []
 
-        {"id": rid, "name": name, "avg_age": float(avg_age)}
-        for (rid, name, avg_age) in rows
-    ]
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("-- name:"):
+            # save previous block
+            if current_name is not None:
+                queries[current_name] = "\n".join(buf).strip()
+                buf.clear()
+
+            current_name = stripped.split(":", 1)[1].strip()
+            continue
+
+        if current_name is not None:
+            buf.append(line)
+
+    # save last block
+    if current_name is not None:
+        queries[current_name] = "\n".join(buf).strip()
+
+    return queries
 
 
-def rooms_with_largest_age_diff(limit: int = 5):
-    sql = """
-    WITH t AS (
-    SELECT r.id, r.name, 
-        MIN(EXTRACT (YEAR FROM AGE (CURRENT_DATE, s.birthday))) as min_age,
-        MAX(EXTRACT(YEAR FROM AGE(CURRENT_DATE, s.birthday))) as max_age
-    FROM rooms2 r
-    JOIN students2 s
-    ON s.room_id = r.id
-    GROUP BY r.id, r.name
-    )
-    SELECT id, name, (max_age - min_age) AS age_diff, min_age, max_age
-    FROM t
-    ORDER BY age_diff DESC
-    LIMIT %s;
-   
-    """
-
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, (limit,))
-            rows = cur.fetchall()
-
-    return [
-        {"id": rid, "name": name, "age_diff":float(age_diff), "min_age": float(min_age), "max_age": float(max_age)}
-        for (rid, name, age_diff, min_age, max_age) in rows
-    ]
-
-def rooms_with_mixed_sex():
-    sql = """
-    SELECT r.id, r.name, COUNT(DISTINCT s.sex) AS sex_count
-    FROM rooms2 r
-    JOIN students2 s
-    ON r.id = s.room_id
-    GROUP BY r.id, r.name
-    HAVING COUNT(DISTINCT s.sex) = 2
-    ORDER BY r.id
-    """
-
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
-            rows = cur.fetchall()
-
-    return [
-        {"id": rid, "name": name}
-        for (rid, name, _) in rows
-    ]
+def run_analytical_query(query_name: str, params: Sequence[Any] | None = None):
+    queries = _load_named_queries()
+    if query_name not in queries:
+        raise KeyError(f"Unknown query_name='{query_name}'. Available: {sorted(queries.keys())}")
+    return fetch_all(queries[query_name], params)
 
 
 def build_report():
-    return{
-        "rooms_with_students_count": rooms_with_students_count(),
-        "rooms_with_smallest_avg_age": rooms_with_smallest_avg_age(),
-        "rooms_with_largest_age_diff": rooms_with_largest_age_diff(),
-        "rooms_with_mixed_sex": rooms_with_mixed_sex(),
+    return {
+        "rooms_with_students_count": [
+            {"id": r[0], "name": r[1], "students_count": r[2]}
+            for r in run_analytical_query("rooms_with_students_count")
+        ],
+        "rooms_with_smallest_avg_age": [
+            {"id": r[0], "name": r[1], "avg_age": float(r[2])}
+            for r in run_analytical_query("rooms_with_smallest_avg_age", params=(DEFAULT_LIMIT,))
+        ],
+        "rooms_with_largest_age_diff": [
+            {
+                "id": r[0],
+                "name": r[1],
+                "age_diff": float(r[2]),
+                "min_age": float(r[3]),
+                "max_age": float(r[4]),
+            }
+            for r in run_analytical_query("rooms_with_largest_age_diff", params=(DEFAULT_LIMIT,))
+        ],
+        "rooms_with_mixed_sex": [
+            {"id": r[0], "name": r[1]}
+            for r in run_analytical_query("rooms_with_mixed_sex")
+        ],
     }

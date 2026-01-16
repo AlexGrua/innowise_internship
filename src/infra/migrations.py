@@ -1,21 +1,14 @@
 from pathlib import Path
-import psycopg
-from src.infra.db import get_dsn
 
-def apply_schema():
-    sql_path = Path(__file__).resolve().parents[2]/"schema.sql"
-    sql = sql_path.read_text(encoding="utf-8")
-
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
+from src.infra.sql_runner import run_sql_file
 
 
-def apply_indexes():
-    sql_path = Path(__file__).resolve().parents[2]/"indexes.sql"
-    sql = sql_path.read_text(encoding="utf-8")
+def apply_schema() -> None:
+    sql_path = Path(__file__).resolve().parents[2] / "sql" / "schema.sql"
+    run_sql_file(sql_path)
 
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
+
+def apply_indexes() -> None:
+    sql_path = Path(__file__).resolve().parents[2] / "sql" / "indexes.sql"
+    run_sql_file(sql_path)
 
