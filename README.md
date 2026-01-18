@@ -39,33 +39,147 @@ Each query is identified by a named marker:
 SELECT ...
 ```
 
+## Data Loading Architecture
+
+Data loading is declarative and configuration-driven
+
+Sources, tables, columns, and mappings are defined in:
+```bash
+src/config/load_registry.py
+```
+
+The loader is universal:
+
+no hardcoded load_rooms / load_students
+
+adding a new table requires only a new config entry
+
+Current data sources:
+
+source/rooms.json
+
+source/students.json
+
 ## Environment Configuration
 
 Database connection settings are shown in a `.env.example` file 
 
 ## Usage
 
-Initialize database schema and indexes:
+- Initialize database schema and indexes:
 ```bash
 python -m src.main --format json --init-db
 ```
+- Load data only (without building reports)
 
-Generate reports in JSON format:
+Useful for initial data import or reloading source files.
+
+```bash
+python -m src.main --format json --load-only
+```
+
+- Generate reports in JSON format:
 
 ```bash
 python -m src.main --format json
 ```
 
-Generate reports in XML format:
+- Generate reports in XML format:
 ```bash
 python -m src.main --format xml
 ```
 
+- Run a single report
+
+Executes only one specific analytical query.
+
+```bash
+python -m src.main --format json --report rooms_with_smallest_avg_age
+```
+
+- Available report names:
+
+rooms_with_students_count
+
+rooms_with_smallest_avg_age
+
+rooms_with_largest_age_diff
+
+rooms_with_mixed_sex
+
+
+- Limit the number of results
+
+Applies to reports that support top-N semantics (average age, age difference).
+
+```bash
+python -m src.main --format json --report rooms_with_smallest_avg_age --limit 10
+```
+
+```bash
+python -m src.main --format json --report rooms_with_largest_age_diff --limit 3
+```
+
+- Combined example
+
+Initialize database, load data, and run a single report with custom limit:
+```bash
+python -m src.main --format json --init-db --report rooms_with_largest_age_diff --limit 5
+```
+
+
 ## Output
 
-The result is printed to stdout in JSON or XML format depending on the `--format` argument.
+The result is printed to `stdout` in JSON or XML format depending on the `--format` argument.
+
+The output structure depends on the selected execution mode:
+
+### Full report output
+When no specific report is selected, all analytical reports are executed and returned:
+
+```json
+{
+  "rooms_with_students_count": [...],
+  "rooms_with_smallest_avg_age": [...],
+  "rooms_with_largest_age_diff": [...],
+  "rooms_with_mixed_sex": [...]
+}
+```
+
+### Single report output
+
+When a specific report is selected using --report, only that report is returned,
+while preserving the same dictionary-based structure:
+
+```json
+{
+  "rooms_with_smallest_avg_age": [...]
+}
+```
 
 ---
+
+## Docker Usage
+
+- Build and start PostgreSQL + run full report
+```bash
+docker compose up --build
+```
+- Run a single report (example: smallest average age, limit 3)
+
+```bash
+docker compose run --rm app \
+  python -m src.main --format json \
+  --report rooms_with_smallest_avg_age \
+  --limit 3
+```
+
+- Load
+```bash
+docker compose run --rm app \
+  python -m src.main --load-only
+```
+
 
 ## Key Points
 
@@ -74,4 +188,12 @@ The result is printed to stdout in JSON or XML format depending on the `--format
 - Pure SQL queries, no ORM  
 - All calculations are done in the database  
 - Indexes are added for query optimization  
-- CLI-based execution with configurable input paths  
+- Fully configurable CLI interface:
+
+  --selective report execution;
+
+  --configurable result limits;
+  
+  --load-only and init-db modes;
+
+- Designed for reproducibility and containerization (Docker-ready)

@@ -11,11 +11,15 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--format", required=True, choices=["json", "xml"])
     p.add_argument("--init-db", action="store_true")
+    p.add_argument("--load-only", action="store_true", help="Only load sources into DB, do not build reports")
+    p.add_argument("--limit", type=int, default=5, help="Limit for top-N reports (e.g. avg age, age diff)")
+    p.add_argument("--report", type=str, default=None, help="Run a single report by name")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
+
     test_connection()
 
     if args.init_db:
@@ -26,7 +30,10 @@ def main():
     load_all_sources()
     print("Sources loaded")
 
-    report = build_report()
+    if args.load_only:
+        return
+
+    report = build_report(limit=args.limit, only=args.report)
 
     if args.format == "json":
         print(serialize_json(report))

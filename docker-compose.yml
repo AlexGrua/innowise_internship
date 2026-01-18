@@ -1,0 +1,25 @@
+
+services:
+  db:
+    image: postgres:16
+    container_name: rooms_postgres
+    environment:
+      POSTGRES_DB: rooms_db
+      POSTGRES_USER: rooms_user
+      POSTGRES_PASSWORD: rooms_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    container_name: rooms_app
+    depends_on:
+      - db
+    env_file:
+      - .env.docker
+    command: python -m src.main --format json
+
+volumes:
+  postgres_data:
