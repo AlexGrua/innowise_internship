@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterable, Sequence, Any, Optional
-import psycopg
+from typing import Iterable, Sequence, Any
 
-from src.infra.db import get_dsn
+from src.infra.db import get_cursor
 
 
 def bulk_insert(
@@ -22,6 +21,5 @@ def bulk_insert(
     ON CONFLICT ({conflict}) DO NOTHING
     """
 
-    with psycopg.connect(get_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.executemany(sql, list(rows))
+    with get_cursor() as cur:
+        cur.executemany(sql, list(rows))

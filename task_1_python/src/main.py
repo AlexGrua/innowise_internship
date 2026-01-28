@@ -1,7 +1,6 @@
 import argparse
 
-from src.infra.db import test_connection
-from src.infra.migrations import apply_indexes, apply_schema
+from src.infra.db import test_connection, apply_sql_file
 from src.infra.loaders import load_all_sources
 from src.infra.reports import build_report
 from src.infra.serializers import serialize_json, serialize_xml
@@ -23,8 +22,8 @@ def main():
     test_connection()
 
     if args.init_db:
-        apply_schema()
-        apply_indexes()
+        apply_sql_file("schema.sql")
+        apply_sql_file("indexes.sql")
         print("Schema and Indexes applied")
 
     load_all_sources()
