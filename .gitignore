@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+venv/
+.venv/
+.env
+.env.local
+
+# Task 6 Airflow: data (large CSV), logs
+task_6_airflow/data/
+task_6_airflow/logs/
+
+# Task 5 Spark: data if large
+task_5_spark/data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Airflow local
+*.cfg
+airflow.db
