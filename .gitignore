@@ -11,12 +11,18 @@ venv/
 .env
 .env.local
 
-# Task 6 Airflow: data (large CSV), logs
-task_6_airflow/data/
+# Task 6 Airflow: data (large CSV), logs; keep .gitkeep so folder structure is visible
+# Ignore contents of data/ (not the dir itself) so we can track .gitkeep files
+task_6_airflow/data/*
+!task_6_airflow/data/.gitkeep
+!task_6_airflow/data/incoming/
+task_6_airflow/data/incoming/*
+!task_6_airflow/data/incoming/.gitkeep
+!task_6_airflow/data/processed/
+task_6_airflow/data/processed/*
+!task_6_airflow/data/processed/.gitkeep
 task_6_airflow/logs/
 
-# Task 5 Spark: data if large
-task_5_spark/data/
 
 # IDE
 .idea/
