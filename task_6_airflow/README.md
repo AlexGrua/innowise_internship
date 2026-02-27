@@ -8,6 +8,14 @@
 - Pandas transformations
 - Dataset-based scheduling (DAG2 listens to Dataset produced by DAG1)
 
+### 1.1 Input data (source file)
+
+The DAG expects the source CSV in `data/incoming/`. Download the file and save it as `tiktok_google_play_reviews.csv` in that folder.
+
+**Download:** [TikTok Google Play reviews (Google Drive)](https://drive.google.com/file/d/1crEUrJMn3XI4ukzlTN8r0ZAzdOVYhpNq/view)
+
+After downloading, place the file at: `task_6_airflow/data/incoming/tiktok_google_play_reviews.csv`.
+
 ## 2. DAGs
 
 ### 2.1 DAG 1 — Data Processing
@@ -58,7 +66,6 @@ Pipeline:
 ]
 ```
 
-(Лимит можно убрать, но для Compass удобнее оставить.)
 
 ### 3.3 Avg rating per day
 
@@ -114,7 +121,7 @@ If the project is on Windows:
 cd /mnt/d/Coding/Innowise_internship/task_6_airflow
 ```
 
-If the project is in Ubuntu (recommended):
+If the project is in Ubuntu:
 
 ```bash
 cd ~/projects/task_6_airflow
